@@ -15,6 +15,7 @@
     --teal-light:  #81E6D9;
     --teal-dark:   #234E52;
     --green:       #68D391;
+    --green-vivid: #22c55e;
     --amber:       #F6AD55;
     --red:         #FC8181;
     --blue:        #63B3ED;
@@ -345,6 +346,14 @@
   .cell-amount.remaining { color: var(--amber); font-weight: 600; }
   .cell-amount.contract  { color: var(--text-1); }
 
+  /* ── VIVID GREEN BOLD for grants / beneficiaries / programs ── */
+  .cell-vivid {
+    color: var(--green-vivid) !important;
+    font-weight: 800 !important;
+    font-size: 14px;
+    letter-spacing: 0.2px;
+  }
+
   .null-badge { font-size: 11px; background: rgba(139,148,158,0.08); color: var(--text-3); padding: 2px 9px; border-radius: 4px; }
 
   .progress-wrap { display: flex; align-items: center; gap: 8px; }
@@ -403,6 +412,8 @@
   .detail-kpi { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; }
   .detail-kpi-label { font-size: 11px; color: var(--text-3); margin-bottom: 7px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
   .detail-kpi-value { font-size: 20px; font-weight: 900; letter-spacing: -0.3px; }
+  /* vivid green in detail for grants/beneficiaries/programs */
+  .detail-kpi-value.vivid-green { color: var(--green-vivid) !important; font-weight: 900; }
   .detail-section-title { font-size: 14px; font-weight: 700; color: var(--text-2); margin-bottom: 12px; display: flex; align-items: center; gap: 9px; }
 
   /* ── FOOTER ── */
@@ -617,7 +628,7 @@
    CONFIG
 ═══════════════════════════════════════════ */
 const API_URL = 'https://script.google.com/macros/s/AKfycbxHRXiqc67DcisAr3rJENQ5r2FJMTIm0ZuN8Ja01b4SY3KbHProquK1kNJJuoa6C_R2hw/exec';
-const REFRESH_INTERVAL = 60_000; // دقيقة واحدة
+const REFRESH_INTERVAL = 60_000;
 
 /* ═══════════════════════════════════════════
    STATE
@@ -628,8 +639,6 @@ let DATA = {
   targeted:     [],
   alerts:       []
 };
-
-let isFirstLoad = true;
 
 /* ═══════════════════════════════════════════
    FETCH DATA
@@ -666,16 +675,13 @@ async function fetchData() {
   try {
     let json;
     try {
-      // محاولة fetch مباشر أولاً
       const res = await fetch(API_URL + '?_=' + Date.now(), { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       json = await res.json();
     } catch (fetchErr) {
-      // إذا فشل fetch بسبب CORS نستخدم JSONP
       json = await fetchDataJSONP();
     }
 
-    // التحقق من صحة البيانات
     if (!json.associations) throw new Error('بيانات غير صالحة');
 
     DATA = {
@@ -685,9 +691,7 @@ async function fetchData() {
       alerts:       json.alerts       || []
     };
 
-    // إخفاء شريط الخطأ عند النجاح
     document.getElementById('error-banner').classList.remove('show');
-
     return true;
   } catch (err) {
     console.error('Fetch error:', err);
@@ -699,13 +703,18 @@ async function fetchData() {
 }
 
 /* ═══════════════════════════════════════════
-   HELPERS
+   HELPERS — English numbers (en-US)
 ═══════════════════════════════════════════ */
 function formatMoney(n) {
   if (!n) return '0';
-  if (n >= 1000000) return (n / 1000000).toFixed(2) + 'م';
-  if (n >= 1000)    return (n / 1000).toFixed(0)    + 'ك';
-  return n.toLocaleString('ar-SA');
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M';
+  if (n >= 1_000)     return (n / 1_000).toFixed(0)     + 'K';
+  return n.toLocaleString('en-US');
+}
+
+function formatNum(n) {
+  if (!n && n !== 0) return null;
+  return Number(n).toLocaleString('en-US');
 }
 
 function getInitial(name) {
@@ -721,7 +730,8 @@ function calcPercent(a)   { return a.contract > 0 ? Math.round(((a.paid || 0) / 
 function updateClock() {
   const now  = new Date();
   const opts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-  document.getElementById('clock').textContent = now.toLocaleTimeString('ar-SA', opts);
+  // Clock in English digits
+  document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', opts);
 }
 
 /* ═══════════════════════════════════════════
@@ -733,22 +743,22 @@ function renderKPIs() {
   const paid      = assocs.reduce((s, a) => s + (a.paid    || 0), 0);
   const remaining = total - paid;
 
-  animateValue('kpi-count',     0, assocs.length,  800);
+  animateValue('kpi-count', 0, assocs.length, 800);
   document.getElementById('kpi-total').textContent     = formatMoney(total);
-  document.getElementById('kpi-paid').textContent      = paid > 0 ? paid.toLocaleString('ar-SA') : '0';
+  document.getElementById('kpi-paid').textContent      = paid > 0 ? paid.toLocaleString('en-US') : '0';
   document.getElementById('kpi-remaining').textContent = formatMoney(remaining);
 }
 
 function animateValue(id, start, end, duration) {
-  const el   = document.getElementById(id);
+  const el    = document.getElementById(id);
   const range = end - start;
   const startTime = performance.now();
 
   function update(now) {
-    const elapsed = now - startTime;
+    const elapsed  = now - startTime;
     const progress = Math.min(elapsed / duration, 1);
-    const ease = 1 - Math.pow(1 - progress, 3);
-    el.textContent = Math.round(start + range * ease);
+    const ease     = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(start + range * ease).toLocaleString('en-US');
     if (progress < 1) requestAnimationFrame(update);
   }
   requestAnimationFrame(update);
@@ -772,27 +782,30 @@ function renderAssocTable() {
     const avClass   = `av-${i % 10}`;
 
     const paidCell = (a.paid > 0)
-      ? `<span class="cell-amount paid">${a.paid.toLocaleString('ar-SA')}</span>`
+      ? `<span class="cell-amount paid">${a.paid.toLocaleString('en-US')}</span>`
       : '<span class="null-badge">لا يوجد</span>';
 
+    // Beneficiaries — vivid green bold
     const benefCell = (a.beneficiaries > 0)
-      ? a.beneficiaries.toLocaleString('ar-SA')
+      ? `<span class="cell-vivid">${Number(a.beneficiaries).toLocaleString('en-US')}</span>`
       : '<span class="null-badge">—</span>';
 
+    // Grants — vivid green bold
     const grantsCell = (a.grants > 0)
-      ? `<span class="cell-amount">${a.grants.toLocaleString('ar-SA')}</span>`
+      ? `<span class="cell-vivid">${a.grants.toLocaleString('en-US')}</span>`
       : '<span class="null-badge">—</span>';
 
+    // Programs — vivid green bold
     const programsCell = (a.programs > 0)
-      ? a.programs
+      ? `<span class="cell-vivid">${Number(a.programs).toLocaleString('en-US')}</span>`
       : '<span class="null-badge">—</span>';
 
     return `
       <tr onclick="openDetail(${i})" title="اضغط لعرض تفاصيل ${a.name}">
         <td><div class="cell-name"><span class="avatar ${avClass}">${getInitial(a.name)}</span>${a.name}</div></td>
-        <td><span class="cell-amount contract">${(a.contract || 0).toLocaleString('ar-SA')}</span></td>
+        <td><span class="cell-amount contract">${(a.contract || 0).toLocaleString('en-US')}</span></td>
         <td>${paidCell}</td>
-        <td><span class="cell-amount remaining">${remaining.toLocaleString('ar-SA')}</span></td>
+        <td><span class="cell-amount remaining">${remaining.toLocaleString('en-US')}</span></td>
         <td>${benefCell}</td>
         <td>${grantsCell}</td>
         <td>${programsCell}</td>
@@ -888,7 +901,7 @@ function renderAlerts() {
    DETAIL PAGE
 ═══════════════════════════════════════════ */
 function openDetail(idx) {
-  const a         = DATA.associations[idx];
+  const a = DATA.associations[idx];
   if (!a) return;
 
   const remaining = calcRemaining(a);
@@ -900,21 +913,22 @@ function openDetail(idx) {
     ${a.name}
   `;
 
+  // vivid-green class applied to beneficiaries, grants, programs
   const kpiItems = [
-    { label: 'قيمة العقد',         value: (a.contract || 0).toLocaleString('ar-SA') + ' ر.س', color: 'var(--teal-light)' },
-    { label: 'المدفوع',            value: (a.paid    || 0).toLocaleString('ar-SA') + ' ر.س',  color: 'var(--green)'      },
-    { label: 'المتبقي',            value: remaining.toLocaleString('ar-SA') + ' ر.س',          color: 'var(--amber)'      },
-    { label: 'نسبة الصرف',         value: pct + '%',                                            color: 'var(--blue)'       },
-    { label: 'المستفيدون',         value: a.beneficiaries || '—',                               color: 'var(--purple)'     },
-    { label: 'المنح',              value: a.grants ? a.grants.toLocaleString('ar-SA') + ' ر.س' : '—', color: 'var(--teal)' },
-    { label: 'البرامج',            value: a.programs || '—',                                    color: 'var(--green)'      },
-    { label: 'تاريخ انتهاء العقد', value: a.contractEnd || '—',                                 color: 'var(--red)'        }
+    { label: 'قيمة العقد',         value: (a.contract || 0).toLocaleString('en-US') + ' SAR', color: 'var(--teal-light)', vivid: false },
+    { label: 'المدفوع',            value: (a.paid    || 0).toLocaleString('en-US') + ' SAR',  color: 'var(--green)',      vivid: false },
+    { label: 'المتبقي',            value: remaining.toLocaleString('en-US') + ' SAR',          color: 'var(--amber)',      vivid: false },
+    { label: 'نسبة الصرف',         value: pct + '%',                                            color: 'var(--blue)',       vivid: false },
+    { label: 'المستفيدون',         value: a.beneficiaries ? Number(a.beneficiaries).toLocaleString('en-US') : '—', color: '', vivid: !!a.beneficiaries },
+    { label: 'المنح',              value: a.grants ? a.grants.toLocaleString('en-US') + ' SAR' : '—', color: '', vivid: !!a.grants },
+    { label: 'البرامج',            value: a.programs ? Number(a.programs).toLocaleString('en-US') : '—', color: '', vivid: !!a.programs },
+    { label: 'تاريخ انتهاء العقد', value: a.contractEnd || '—',                                 color: 'var(--red)',        vivid: false }
   ];
 
   document.getElementById('detail-kpis').innerHTML = kpiItems.map(k => `
     <div class="detail-kpi">
       <div class="detail-kpi-label">${k.label}</div>
-      <div class="detail-kpi-value" style="color:${k.color}">${k.value}</div>
+      <div class="detail-kpi-value ${k.vivid ? 'vivid-green' : ''}" style="${k.vivid ? '' : 'color:' + k.color}">${k.value}</div>
     </div>
   `).join('');
 
@@ -956,10 +970,9 @@ function renderAll() {
   renderTargeted();
   renderAlerts();
 
-  // آخر تحديث
   const now = new Date();
   document.getElementById('last-update').textContent =
-    'آخر تحديث: ' + now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+    'آخر تحديث: ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
 /* ═══════════════════════════════════════════
@@ -985,14 +998,11 @@ async function autoRefresh() {
    INIT
 ═══════════════════════════════════════════ */
 (async function init() {
-  // Clock
   updateClock();
   setInterval(updateClock, 1000);
 
-  // Fetch data first time
   await fetchData();
 
-  // Hide loading, show dashboard
   const loadingScreen = document.getElementById('loading-screen');
   loadingScreen.classList.add('hidden');
   setTimeout(() => {
@@ -1002,7 +1012,6 @@ async function autoRefresh() {
 
   renderAll();
 
-  // Auto-refresh every minute
   setInterval(autoRefresh, REFRESH_INTERVAL);
 })();
 </script>
