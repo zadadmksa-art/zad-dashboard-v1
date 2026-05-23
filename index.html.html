@@ -1,146 +1,1011 @@
-/**
- * زاد التنموية — Web App API
- * يوفر رابط JSON + JSONP لربط الداشبورد بـ Google Sheets
- * ✅ يدعم JSONP لحل مشكلة CORS
- */
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>زاد التنموية — لوحة المتابعة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-function doGet(e) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const output = {
-    associations: [],
-    achievements: [],
-    targeted:     [],
-    alerts:       []
-  };
-
-  // ═══════════════════════════════════════
-  // 1. ورقة: الجمعيات_المتعاقدة
-  // ═══════════════════════════════════════
-  try {
-    const sheet = ss.getSheetByName("الجمعيات_المتعاقدة");
-    const data = sheet.getRange(3, 1, sheet.getLastRow() - 2, 9).getValues();
-
-    data.forEach((row, i) => {
-      const name = String(row[0]).trim();
-      if (!name || name === "الإجمالي") return;
-
-      output.associations.push({
-        id:            i,
-        name:          name,
-        contractStart: formatDate(row[1]),
-        contractEnd:   formatDate(row[2]),
-        contract:      toNum(row[3]),
-        paid:          toNum(row[4]),
-        beneficiaries: toNum(row[6]),
-        grants:        toNum(row[7]),
-        programs:      toNum(row[8])
-      });
-    });
-  } catch(err) {
-    output.error_associations = err.message;
+  :root {
+    --teal:        #38B2AC;
+    --teal-light:  #81E6D9;
+    --teal-dark:   #234E52;
+    --green:       #68D391;
+    --amber:       #F6AD55;
+    --red:         #FC8181;
+    --blue:        #63B3ED;
+    --purple:      #B794F6;
+    --bg:          #0D1117;
+    --card:        #161B22;
+    --card-hover:  #1C2230;
+    --border:      #21262D;
+    --border-2:    #30363D;
+    --text-1:      #E2E8F0;
+    --text-2:      #C9D1D9;
+    --text-3:      #8B949E;
+    --radius-sm:   8px;
+    --radius-md:   12px;
+    --radius-lg:   16px;
   }
 
-  // ═══════════════════════════════════════
-  // 2. ورقة: الإنجازات
-  // ═══════════════════════════════════════
-  try {
-    const sheet = ss.getSheetByName("الإنجازات");
-    const lastRow = sheet.getLastRow();
-    if (lastRow >= 4) {
-      const data = sheet.getRange(4, 1, lastRow - 3, 4).getValues();
-      data.forEach(row => {
-        const assoc = String(row[0]).trim();
-        if (!assoc) return;
-        output.achievements.push({
-          assoc:   assoc,
-          service: String(row[1]).trim(),
-          desc:    String(row[2]).trim(),
-          date:    formatDate(row[3])
-        });
-      });
-    }
-  } catch(err) {
-    output.error_achievements = err.message;
+  html { font-size: 16px; }
+  body {
+    font-family: 'Tajawal', sans-serif;
+    background: var(--bg);
+    color: var(--text-1);
+    direction: rtl;
+    min-height: 100vh;
+    line-height: 1.5;
   }
 
-  // ═══════════════════════════════════════
-  // 3. ورقة: الجمعيات_المستهدفة
-  // ═══════════════════════════════════════
-  try {
-    const sheet = ss.getSheetByName("الجمعيات_المستهدفة");
-    const lastRow = sheet.getLastRow();
-    if (lastRow >= 3) {
-      const data = sheet.getRange(3, 1, lastRow - 2, 2).getValues();
-      data.forEach(row => {
-        const name = String(row[0]).trim();
-        if (!name) return;
-        output.targeted.push({
-          name:   name,
-          status: String(row[1]).trim()
-        });
-      });
-    }
-  } catch(err) {
-    output.error_targeted = err.message;
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--teal-dark); }
+
+  /* ── LOADING SCREEN ── */
+  #loading-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    transition: opacity 0.5s ease;
   }
 
-  // ═══════════════════════════════════════
-  // 4. ورقة: التنبيهات
-  // ═══════════════════════════════════════
-  try {
-    const sheet = ss.getSheetByName("التنبيهات");
-    const lastRow = sheet.getLastRow();
-    if (lastRow >= 4) {
-      const data = sheet.getRange(4, 1, lastRow - 3, 3).getValues();
-      data.forEach(row => {
-        const title = String(row[0]).trim();
-        if (!title) return;
-        output.alerts.push({
-          title: title,
-          desc:  String(row[1]).trim(),
-          date:  formatDate(row[2])
-        });
-      });
-    }
-  } catch(err) {
-    output.error_alerts = err.message;
+  #loading-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
   }
 
-  // ═══════════════════════════════════════
-  // ✅ إرجاع JSON أو JSONP حسب وجود callback
-  // ═══════════════════════════════════════
-  const jsonString = JSON.stringify(output);
-  const callback = e && e.parameter && e.parameter.callback;
-
-  if (callback) {
-    // JSONP — يحل مشكلة CORS في المتصفح
-    return ContentService
-      .createTextOutput(callback + '(' + jsonString + ')')
-      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  .loader-logo {
+    width: 72px;
+    height: 72px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, var(--teal), var(--green));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -2px;
+    animation: logoPulse 1.5s ease-in-out infinite;
   }
 
-  // JSON عادي
-  return ContentService
-    .createTextOutput(jsonString)
-    .setMimeType(ContentService.MimeType.JSON);
+  @keyframes logoPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(56,178,172,0.4); }
+    50% { transform: scale(1.05); box-shadow: 0 0 0 16px rgba(56,178,172,0); }
+  }
+
+  .loader-text {
+    font-size: 16px;
+    color: var(--text-3);
+    font-weight: 500;
+  }
+
+  .loader-bar {
+    width: 200px;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .loader-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--teal), var(--green));
+    border-radius: 2px;
+    animation: loaderAnim 1.8s ease-in-out infinite;
+  }
+
+  @keyframes loaderAnim {
+    0% { transform: translateX(200px); width: 40%; }
+    50% { transform: translateX(-10px); width: 60%; }
+    100% { transform: translateX(-200px); width: 40%; }
+  }
+
+  /* ── ERROR BANNER ── */
+  #error-banner {
+    display: none;
+    background: rgba(252,129,129,0.10);
+    border: 1px solid rgba(252,129,129,0.30);
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    color: var(--red);
+    font-size: 13px;
+    margin: 16px 28px 0;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #error-banner.show { display: flex; }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .header-brand { display: flex; align-items: center; gap: 14px; }
+
+  .header-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--teal), var(--green));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 900;
+    color: #fff;
+    flex-shrink: 0;
+    letter-spacing: -1px;
+  }
+
+  .header-title h1 { font-size: 17px; font-weight: 700; color: var(--text-1); line-height: 1.2; }
+  .header-title p  { font-size: 12px; color: var(--teal); margin-top: 2px; }
+
+  .header-meta { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--text-3); }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(56,178,172,0.10);
+    border: 1px solid rgba(56,178,172,0.28);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--teal);
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    background: var(--teal);
+    border-radius: 50%;
+    animation: livePulse 2s ease-in-out infinite;
+  }
+
+  @keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  .refresh-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-3);
+    font-family: 'Tajawal', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .refresh-btn:hover { border-color: var(--teal); color: var(--teal); }
+  .refresh-btn.spinning .refresh-icon { animation: spin 0.8s linear infinite; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #clock { font-variant-numeric: tabular-nums; font-weight: 500; letter-spacing: 0.5px; }
+
+  /* ── MAIN ── */
+  .main {
+    padding: 22px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  /* ── KPI CARDS ── */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+  .kpi-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 18px 20px 16px;
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .kpi-card::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 4px; height: 100%;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at top right, var(--glow-color, transparent) 0%, transparent 65%);
+    opacity: 0.08;
+    pointer-events: none;
+  }
+
+  .kpi-card:hover { transform: translateY(-3px); border-color: var(--border-2); box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+
+  .kpi-card.teal  { --glow-color: var(--teal); }
+  .kpi-card.green { --glow-color: var(--green); }
+  .kpi-card.amber { --glow-color: var(--amber); }
+  .kpi-card.red   { --glow-color: var(--red); }
+
+  .kpi-card.teal::after  { background: var(--teal); }
+  .kpi-card.green::after { background: var(--green); }
+  .kpi-card.amber::after { background: var(--amber); }
+  .kpi-card.red::after   { background: var(--red); }
+
+  .kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .kpi-label { font-size: 12px; color: var(--text-3); font-weight: 500; }
+
+  .kpi-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+  .kpi-card.teal  .kpi-icon { background: rgba(56,178,172,0.14); }
+  .kpi-card.green .kpi-icon { background: rgba(104,211,145,0.14); }
+  .kpi-card.amber .kpi-icon { background: rgba(246,173,85,0.14); }
+  .kpi-card.red   .kpi-icon { background: rgba(252,129,129,0.14); }
+
+  .kpi-value { font-size: 28px; font-weight: 900; line-height: 1; margin-bottom: 5px; letter-spacing: -0.5px; }
+  .kpi-card.teal  .kpi-value { color: var(--teal-light); }
+  .kpi-card.green .kpi-value { color: var(--green); }
+  .kpi-card.amber .kpi-value { color: var(--amber); }
+  .kpi-card.red   .kpi-value { color: var(--red); }
+  .kpi-sub { font-size: 11px; color: var(--text-3); }
+
+  /* ── PANEL ── */
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+
+  .panel-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title { font-size: 14px; font-weight: 700; color: var(--text-2); display: flex; align-items: center; gap: 9px; }
+  .panel-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+  .panel-badge { font-size: 11px; padding: 3px 11px; border-radius: 20px; font-weight: 600; }
+
+  .badge-teal  { background: rgba(56,178,172,0.10);  color: var(--teal);  border: 1px solid rgba(56,178,172,0.22); }
+  .badge-green { background: rgba(104,211,145,0.10); color: var(--green); border: 1px solid rgba(104,211,145,0.22); }
+  .badge-amber { background: rgba(246,173,85,0.10);  color: var(--amber); border: 1px solid rgba(246,173,85,0.22); }
+  .badge-red   { background: rgba(252,129,129,0.10); color: var(--red);   border: 1px solid rgba(252,129,129,0.22); }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+  thead th {
+    padding: 10px 16px;
+    text-align: right;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-3);
+    background: rgba(255,255,255,0.025);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+
+  tbody td { padding: 12px 16px; border-bottom: 1px solid rgba(33,38,45,0.55); color: var(--text-2); white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr { transition: background 0.15s ease; }
+  tbody tr:hover td { background: rgba(56,178,172,0.045); cursor: pointer; }
+
+  .cell-name { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--teal-light); }
+
+  .avatar { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+
+  .av-0 { background: rgba(56,178,172,0.18);  color: var(--teal);   }
+  .av-1 { background: rgba(104,211,145,0.18); color: var(--green);  }
+  .av-2 { background: rgba(246,173,85,0.18);  color: var(--amber);  }
+  .av-3 { background: rgba(252,129,129,0.18); color: var(--red);    }
+  .av-4 { background: rgba(99,179,237,0.18);  color: var(--blue);   }
+  .av-5 { background: rgba(183,148,246,0.18); color: var(--purple); }
+  .av-6 { background: rgba(246,135,179,0.18); color: #F687B3;       }
+  .av-7 { background: rgba(154,205,128,0.18); color: #9ACD80;       }
+  .av-8 { background: rgba(56,178,172,0.12);  color: var(--teal);   }
+  .av-9 { background: rgba(104,211,145,0.12); color: var(--green);  }
+
+  .cell-amount { font-variant-numeric: tabular-nums; }
+  .cell-amount.paid      { color: var(--green); font-weight: 600; }
+  .cell-amount.remaining { color: var(--amber); font-weight: 600; }
+  .cell-amount.contract  { color: var(--text-1); }
+
+  .null-badge { font-size: 11px; background: rgba(139,148,158,0.08); color: var(--text-3); padding: 2px 9px; border-radius: 4px; }
+
+  .progress-wrap { display: flex; align-items: center; gap: 8px; }
+  .progress-bar { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; width: 80px; flex-shrink: 0; }
+  .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--teal), var(--green)); }
+  .progress-label { font-size: 11px; color: var(--text-3); min-width: 30px; text-align: left; }
+
+  /* ── GRID LOWER ── */
+  .grid-lower { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; }
+  .right-col { display: flex; flex-direction: column; gap: 20px; }
+
+  /* ── SCROLL LIST ── */
+  .scroll-list { max-height: 300px; overflow-y: auto; }
+
+  .achieve-item { padding: 13px 20px; border-bottom: 1px solid rgba(33,38,45,0.5); transition: background 0.14s; }
+  .achieve-item:last-child { border-bottom: none; }
+  .achieve-item:hover { background: rgba(56,178,172,0.04); }
+  .achieve-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; gap: 8px; }
+  .achieve-tag { font-size: 11px; color: var(--teal); font-weight: 600; }
+  .achieve-date { font-size: 11px; color: var(--text-3); white-space: nowrap; flex-shrink: 0; }
+  .achieve-title { font-size: 13px; font-weight: 600; color: var(--text-2); }
+
+  .target-item { padding: 13px 20px; border-bottom: 1px solid rgba(33,38,45,0.5); display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: background 0.14s; }
+  .target-item:last-child { border-bottom: none; }
+  .target-item:hover { background: rgba(246,173,85,0.04); }
+  .target-name { font-size: 13px; font-weight: 600; color: var(--text-2); }
+
+  .status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+  .status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .status-badge.pending { background: rgba(246,173,85,0.10); color: var(--amber); border: 1px solid rgba(246,173,85,0.24); }
+  .status-badge.active  { background: rgba(104,211,145,0.10); color: var(--green); border: 1px solid rgba(104,211,145,0.24); }
+
+  .alert-item { padding: 13px 20px; border-bottom: 1px solid rgba(33,38,45,0.5); display: flex; gap: 12px; align-items: flex-start; transition: background 0.14s; }
+  .alert-item:last-child { border-bottom: none; }
+  .alert-item:hover { background: rgba(252,129,129,0.04); }
+  .alert-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; background: rgba(252,129,129,0.10); border: 1px solid rgba(252,129,129,0.20); }
+  .alert-content { flex: 1; min-width: 0; }
+  .alert-title { font-size: 13px; font-weight: 700; color: var(--text-2); margin-bottom: 3px; }
+  .alert-desc { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .alert-date { font-size: 11px; color: var(--red); margin-top: 5px; font-weight: 600; }
+
+  /* ── DETAIL OVERLAY ── */
+  .detail-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; overflow-y: auto; }
+  .detail-overlay.active { display: block; animation: overlayFadeIn 0.25s ease; }
+  @keyframes overlayFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .detail-page { background: var(--bg); min-height: 100vh; padding: 24px 32px; animation: slideUp 0.28s ease; }
+  @keyframes slideUp { from { transform: translateY(18px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .back-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--border); color: var(--teal); font-size: 13px; font-weight: 600; font-family: 'Tajawal', sans-serif; padding: 9px 18px; border-radius: var(--radius-sm); cursor: pointer; margin-bottom: 22px; transition: all 0.18s; }
+  .back-btn:hover { background: rgba(56,178,172,0.10); border-color: rgba(56,178,172,0.4); }
+
+  .detail-header-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px 28px; margin-bottom: 22px; }
+  .detail-name { font-size: 24px; font-weight: 900; color: var(--teal-light); display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .detail-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .detail-kpi { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; }
+  .detail-kpi-label { font-size: 11px; color: var(--text-3); margin-bottom: 7px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+  .detail-kpi-value { font-size: 20px; font-weight: 900; letter-spacing: -0.3px; }
+  .detail-section-title { font-size: 14px; font-weight: 700; color: var(--text-2); margin-bottom: 12px; display: flex; align-items: center; gap: 9px; }
+
+  /* ── FOOTER ── */
+  .footer { padding: 13px 28px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--text-3); margin-top: 8px; }
+  .footer-brand { color: var(--teal); font-weight: 700; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { opacity: 0; animation: fadeUp 0.45s ease forwards; }
+  .fade-up:nth-child(1) { animation-delay: 0.05s; }
+  .fade-up:nth-child(2) { animation-delay: 0.12s; }
+  .fade-up:nth-child(3) { animation-delay: 0.19s; }
+  .fade-up:nth-child(4) { animation-delay: 0.26s; }
+
+  .empty-state { padding: 36px 20px; text-align: center; color: var(--text-3); font-size: 13px; }
+  .empty-state .icon { font-size: 28px; margin-bottom: 8px; }
+
+  /* ── SKELETON LOADER ── */
+  .skeleton {
+    background: linear-gradient(90deg, var(--border) 25%, var(--border-2) 50%, var(--border) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+  }
+
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  .skeleton-row td { padding: 14px 16px; }
+  .skeleton-block { height: 14px; border-radius: 4px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 1100px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .grid-lower { grid-template-columns: 1fr; }
+    .detail-kpis { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 640px) {
+    .main { padding: 14px 16px; }
+    .header { padding: 12px 16px; }
+    .kpis { grid-template-columns: 1fr 1fr; }
+    .header-meta { gap: 10px; }
+    #clock { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+  <div class="loader-logo">ز</div>
+  <div class="loader-text">جاري تحميل البيانات من Google Sheets…</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<!-- MAIN DASHBOARD -->
+<div id="main-dashboard" style="display:none">
+
+  <header class="header">
+    <div class="header-brand">
+      <div class="header-logo">ز</div>
+      <div class="header-title">
+        <h1>زاد التنموية — لوحة المتابعة</h1>
+        <p>Zad Development Services · لأثر مستدام</p>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span id="clock"></span>
+      <button class="refresh-btn" onclick="manualRefresh()" title="تحديث البيانات">
+        <span class="refresh-icon">↻</span>
+        <span>تحديث</span>
+      </button>
+      <div class="live-badge">
+        <span class="live-dot"></span>
+        <span>مباشر</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="error-banner">
+    <span>⚠️</span>
+    <span id="error-msg">تعذّر الاتصال بـ Google Sheets، يتم عرض آخر بيانات محفوظة.</span>
+  </div>
+
+  <main class="main">
+
+    <!-- KPI Cards -->
+    <section class="kpis" id="kpi-section">
+      <div class="kpi-card teal fade-up">
+        <div class="kpi-top"><span class="kpi-label">الجمعيات المتعاقدة</span><div class="kpi-icon">🏢</div></div>
+        <div class="kpi-value" id="kpi-count">—</div>
+        <div class="kpi-sub">جمعية نشطة</div>
+      </div>
+      <div class="kpi-card green fade-up">
+        <div class="kpi-top"><span class="kpi-label">إجمالي قيمة العقود</span><div class="kpi-icon">💰</div></div>
+        <div class="kpi-value" id="kpi-total">—</div>
+        <div class="kpi-sub">ريال سعودي</div>
+      </div>
+      <div class="kpi-card amber fade-up">
+        <div class="kpi-top"><span class="kpi-label">إجمالي المدفوع</span><div class="kpi-icon">✅</div></div>
+        <div class="kpi-value" id="kpi-paid">—</div>
+        <div class="kpi-sub">ريال سعودي</div>
+      </div>
+      <div class="kpi-card red fade-up">
+        <div class="kpi-top"><span class="kpi-label">إجمالي المتبقي</span><div class="kpi-icon">⏳</div></div>
+        <div class="kpi-value" id="kpi-remaining">—</div>
+        <div class="kpi-sub">ريال سعودي</div>
+      </div>
+    </section>
+
+    <!-- Associations Table -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><span class="panel-dot" style="background:var(--teal)"></span>جدول الجمعيات المتعاقدة</div>
+        <span class="panel-badge badge-teal" id="assoc-badge">—</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>اسم الجمعية</th>
+              <th>قيمة العقد</th>
+              <th>المدفوع</th>
+              <th>المتبقي</th>
+              <th>المستفيدون</th>
+              <th>المنح</th>
+              <th>البرامج</th>
+              <th>نسبة الصرف</th>
+            </tr>
+          </thead>
+          <tbody id="assoc-tbody">
+            <tr class="skeleton-row"><td><div class="skeleton skeleton-block" style="width:120px"></div></td><td><div class="skeleton skeleton-block" style="width:80px"></div></td><td><div class="skeleton skeleton-block" style="width:70px"></div></td><td><div class="skeleton skeleton-block" style="width:80px"></div></td><td><div class="skeleton skeleton-block" style="width:40px"></div></td><td><div class="skeleton skeleton-block" style="width:50px"></div></td><td><div class="skeleton skeleton-block" style="width:30px"></div></td><td><div class="skeleton skeleton-block" style="width:90px"></div></td></tr>
+            <tr class="skeleton-row"><td><div class="skeleton skeleton-block" style="width:100px"></div></td><td><div class="skeleton skeleton-block" style="width:80px"></div></td><td><div class="skeleton skeleton-block" style="width:70px"></div></td><td><div class="skeleton skeleton-block" style="width:80px"></div></td><td><div class="skeleton skeleton-block" style="width:40px"></div></td><td><div class="skeleton skeleton-block" style="width:50px"></div></td><td><div class="skeleton skeleton-block" style="width:30px"></div></td><td><div class="skeleton skeleton-block" style="width:90px"></div></td></tr>
+            <tr class="skeleton-row"><td><div class="skeleton skeleton-block" style="width:140px"></div></td><td><div class="skeleton skeleton-block" style="width:80px"></div></td><td><div class="skeleton skeleton-block" style="width:70px"></div></td><td><div class="skeleton skeleton-block" style="width:80px"></div></td><td><div class="skeleton skeleton-block" style="width:40px"></div></td><td><div class="skeleton skeleton-block" style="width:50px"></div></td><td><div class="skeleton skeleton-block" style="width:30px"></div></td><td><div class="skeleton skeleton-block" style="width:90px"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Lower Grid -->
+    <div class="grid-lower">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><span class="panel-dot" style="background:var(--green)"></span>الإنجازات العامة</div>
+          <span class="panel-badge badge-green">الأحدث أولاً</span>
+        </div>
+        <div class="scroll-list" id="achievements-list">
+          <div class="empty-state"><div class="icon">⏳</div>جاري التحميل…</div>
+        </div>
+      </div>
+
+      <div class="right-col">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><span class="panel-dot" style="background:var(--amber)"></span>الجمعيات المستهدفة</div>
+            <span class="panel-badge badge-amber" id="targeted-badge">—</span>
+          </div>
+          <div id="targeted-list"><div class="empty-state"><div class="icon">⏳</div>جاري التحميل…</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><span class="panel-dot" style="background:var(--red)"></span>التنبيهات والمواعيد</div>
+            <span class="panel-badge badge-red" id="alerts-badge"></span>
+          </div>
+          <div id="alerts-list"><div class="empty-state"><div class="icon">⏳</div>جاري التحميل…</div></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    <span><span class="footer-brand">زاد التنموية</span> &mdash; لأثر مستدام</span>
+    <span>يتجدد تلقائياً كل دقيقة &bull; <span id="last-update">—</span></span>
+  </footer>
+
+</div><!-- /#main-dashboard -->
+
+
+<!-- DETAIL OVERLAY -->
+<div class="detail-overlay" id="detail-overlay">
+  <div class="detail-page">
+    <button class="back-btn" onclick="closeDetail()">← العودة للوحة الرئيسية</button>
+    <div class="detail-header-card">
+      <div class="detail-name" id="detail-name"></div>
+      <div class="detail-kpis" id="detail-kpis"></div>
+    </div>
+    <div class="detail-section-title">📋 &nbsp;إنجازات الجمعية</div>
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>اسم الخدمة</th>
+              <th>وصف الإنجاز</th>
+              <th>التاريخ</th>
+            </tr>
+          </thead>
+          <tbody id="detail-achievements-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════ */
+const API_URL = 'https://script.google.com/macros/s/AKfycbxHRXiqc67DcisAr3rJENQ5r2FJMTIm0ZuN8Ja01b4SY3KbHProquK1kNJJuoa6C_R2hw/exec';
+const REFRESH_INTERVAL = 60_000; // دقيقة واحدة
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+let DATA = {
+  associations: [],
+  achievements: [],
+  targeted:     [],
+  alerts:       []
+};
+
+let isFirstLoad = true;
+
+/* ═══════════════════════════════════════════
+   FETCH DATA
+═══════════════════════════════════════════ */
+function fetchDataJSONP() {
+  return new Promise((resolve, reject) => {
+    const cbName = 'zadCb_' + Date.now();
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      script.remove();
+      reject(new Error('انتهت مهلة الاتصال'));
+    }, 15000);
+
+    window[cbName] = function(json) {
+      clearTimeout(timeout);
+      delete window[cbName];
+      script.remove();
+      resolve(json);
+    };
+
+    const script = document.createElement('script');
+    script.src = API_URL + '?callback=' + cbName + '&_=' + Date.now();
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      script.remove();
+      reject(new Error('Failed to fetch'));
+    };
+    document.head.appendChild(script);
+  });
 }
 
-/* ─────────────────────────────────
-   مساعدات
-───────────────────────────────── */
-function toNum(val) {
-  if (val === "" || val === null || val === undefined) return 0;
-  const n = parseFloat(String(val).replace(/,/g, ""));
-  return isNaN(n) ? 0 : n;
+async function fetchData() {
+  try {
+    let json;
+    try {
+      // محاولة fetch مباشر أولاً
+      const res = await fetch(API_URL + '?_=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      json = await res.json();
+    } catch (fetchErr) {
+      // إذا فشل fetch بسبب CORS نستخدم JSONP
+      json = await fetchDataJSONP();
+    }
+
+    // التحقق من صحة البيانات
+    if (!json.associations) throw new Error('بيانات غير صالحة');
+
+    DATA = {
+      associations: json.associations || [],
+      achievements: json.achievements || [],
+      targeted:     json.targeted     || [],
+      alerts:       json.alerts       || []
+    };
+
+    // إخفاء شريط الخطأ عند النجاح
+    document.getElementById('error-banner').classList.remove('show');
+
+    return true;
+  } catch (err) {
+    console.error('Fetch error:', err);
+    document.getElementById('error-msg').textContent =
+      'تعذّر الاتصال بـ Google Sheets: ' + err.message + ' — يتم عرض آخر بيانات محفوظة.';
+    document.getElementById('error-banner').classList.add('show');
+    return false;
+  }
 }
 
-function formatDate(val) {
-  if (!val) return "";
-  if (val instanceof Date) {
-    const y = val.getFullYear();
-    const m = String(val.getMonth() + 1).padStart(2, "0");
-    const d = String(val.getDate()).padStart(2, "0");
-    return `${y}/${m}/${d}`;
-  }
-  return String(val).trim();
+/* ═══════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════ */
+function formatMoney(n) {
+  if (!n) return '0';
+  if (n >= 1000000) return (n / 1000000).toFixed(2) + 'م';
+  if (n >= 1000)    return (n / 1000).toFixed(0)    + 'ك';
+  return n.toLocaleString('ar-SA');
 }
+
+function getInitial(name) {
+  return name ? name.charAt(0) : '؟';
+}
+
+function calcRemaining(a) { return (a.contract || 0) - (a.paid || 0); }
+function calcPercent(a)   { return a.contract > 0 ? Math.round(((a.paid || 0) / a.contract) * 100) : 0; }
+
+/* ═══════════════════════════════════════════
+   CLOCK
+═══════════════════════════════════════════ */
+function updateClock() {
+  const now  = new Date();
+  const opts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+  document.getElementById('clock').textContent = now.toLocaleTimeString('ar-SA', opts);
+}
+
+/* ═══════════════════════════════════════════
+   KPI
+═══════════════════════════════════════════ */
+function renderKPIs() {
+  const assocs    = DATA.associations;
+  const total     = assocs.reduce((s, a) => s + (a.contract || 0), 0);
+  const paid      = assocs.reduce((s, a) => s + (a.paid    || 0), 0);
+  const remaining = total - paid;
+
+  animateValue('kpi-count',     0, assocs.length,  800);
+  document.getElementById('kpi-total').textContent     = formatMoney(total);
+  document.getElementById('kpi-paid').textContent      = paid > 0 ? paid.toLocaleString('ar-SA') : '0';
+  document.getElementById('kpi-remaining').textContent = formatMoney(remaining);
+}
+
+function animateValue(id, start, end, duration) {
+  const el   = document.getElementById(id);
+  const range = end - start;
+  const startTime = performance.now();
+
+  function update(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(start + range * ease);
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+/* ═══════════════════════════════════════════
+   ASSOCIATIONS TABLE
+═══════════════════════════════════════════ */
+function renderAssocTable() {
+  const tbody = document.getElementById('assoc-tbody');
+
+  if (!DATA.associations.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="icon">📭</div>لا توجد جمعيات مسجلة</div></td></tr>`;
+    document.getElementById('assoc-badge').textContent = '0 جمعيات';
+    return;
+  }
+
+  tbody.innerHTML = DATA.associations.map((a, i) => {
+    const remaining = calcRemaining(a);
+    const pct       = calcPercent(a);
+    const avClass   = `av-${i % 10}`;
+
+    const paidCell = (a.paid > 0)
+      ? `<span class="cell-amount paid">${a.paid.toLocaleString('ar-SA')}</span>`
+      : '<span class="null-badge">لا يوجد</span>';
+
+    const benefCell = (a.beneficiaries > 0)
+      ? a.beneficiaries.toLocaleString('ar-SA')
+      : '<span class="null-badge">—</span>';
+
+    const grantsCell = (a.grants > 0)
+      ? `<span class="cell-amount">${a.grants.toLocaleString('ar-SA')}</span>`
+      : '<span class="null-badge">—</span>';
+
+    const programsCell = (a.programs > 0)
+      ? a.programs
+      : '<span class="null-badge">—</span>';
+
+    return `
+      <tr onclick="openDetail(${i})" title="اضغط لعرض تفاصيل ${a.name}">
+        <td><div class="cell-name"><span class="avatar ${avClass}">${getInitial(a.name)}</span>${a.name}</div></td>
+        <td><span class="cell-amount contract">${(a.contract || 0).toLocaleString('ar-SA')}</span></td>
+        <td>${paidCell}</td>
+        <td><span class="cell-amount remaining">${remaining.toLocaleString('ar-SA')}</span></td>
+        <td>${benefCell}</td>
+        <td>${grantsCell}</td>
+        <td>${programsCell}</td>
+        <td>
+          <div class="progress-wrap">
+            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+            <span class="progress-label">${pct}%</span>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('assoc-badge').textContent = DATA.associations.length + ' جمعيات';
+}
+
+/* ═══════════════════════════════════════════
+   ACHIEVEMENTS
+═══════════════════════════════════════════ */
+function renderAchievements() {
+  const el   = document.getElementById('achievements-list');
+  const list = DATA.achievements;
+
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📭</div>لا توجد إنجازات مسجلة</div>';
+    return;
+  }
+
+  el.innerHTML = list.map(a => `
+    <div class="achieve-item">
+      <div class="achieve-meta">
+        <span class="achieve-tag">${a.assoc} &bull; ${a.service}</span>
+        <span class="achieve-date">${a.date}</span>
+      </div>
+      <div class="achieve-title">${a.desc}</div>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════════
+   TARGETED
+═══════════════════════════════════════════ */
+function renderTargeted() {
+  const el   = document.getElementById('targeted-list');
+  const list = DATA.targeted;
+
+  document.getElementById('targeted-badge').textContent = list.length + ' جمعيات';
+
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📭</div>لا توجد جمعيات مستهدفة</div>';
+    return;
+  }
+
+  el.innerHTML = list.map(t => {
+    const isActive   = t.status.includes('تم التوقيع');
+    const badgeClass = isActive ? 'active' : 'pending';
+    return `
+      <div class="target-item">
+        <div class="target-name">${t.name}</div>
+        <span class="status-badge ${badgeClass}"><span class="status-dot"></span>${t.status}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════
+   ALERTS
+═══════════════════════════════════════════ */
+function renderAlerts() {
+  const el   = document.getElementById('alerts-list');
+  const list = DATA.alerts;
+
+  document.getElementById('alerts-badge').textContent = list.length ? list.length + ' تنبيه' : '';
+
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">🔕</div>لا توجد تنبيهات</div>';
+    return;
+  }
+
+  el.innerHTML = list.map(a => `
+    <div class="alert-item">
+      <div class="alert-icon">⚡</div>
+      <div class="alert-content">
+        <div class="alert-title">${a.title}</div>
+        <div class="alert-desc">${a.desc}</div>
+        <div class="alert-date">${a.date}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════════
+   DETAIL PAGE
+═══════════════════════════════════════════ */
+function openDetail(idx) {
+  const a         = DATA.associations[idx];
+  if (!a) return;
+
+  const remaining = calcRemaining(a);
+  const pct       = calcPercent(a);
+  const avClass   = `av-${idx % 10}`;
+
+  document.getElementById('detail-name').innerHTML = `
+    <span class="avatar ${avClass}" style="width:44px;height:44px;font-size:20px">${getInitial(a.name)}</span>
+    ${a.name}
+  `;
+
+  const kpiItems = [
+    { label: 'قيمة العقد',         value: (a.contract || 0).toLocaleString('ar-SA') + ' ر.س', color: 'var(--teal-light)' },
+    { label: 'المدفوع',            value: (a.paid    || 0).toLocaleString('ar-SA') + ' ر.س',  color: 'var(--green)'      },
+    { label: 'المتبقي',            value: remaining.toLocaleString('ar-SA') + ' ر.س',          color: 'var(--amber)'      },
+    { label: 'نسبة الصرف',         value: pct + '%',                                            color: 'var(--blue)'       },
+    { label: 'المستفيدون',         value: a.beneficiaries || '—',                               color: 'var(--purple)'     },
+    { label: 'المنح',              value: a.grants ? a.grants.toLocaleString('ar-SA') + ' ر.س' : '—', color: 'var(--teal)' },
+    { label: 'البرامج',            value: a.programs || '—',                                    color: 'var(--green)'      },
+    { label: 'تاريخ انتهاء العقد', value: a.contractEnd || '—',                                 color: 'var(--red)'        }
+  ];
+
+  document.getElementById('detail-kpis').innerHTML = kpiItems.map(k => `
+    <div class="detail-kpi">
+      <div class="detail-kpi-label">${k.label}</div>
+      <div class="detail-kpi-value" style="color:${k.color}">${k.value}</div>
+    </div>
+  `).join('');
+
+  const assocAchievements = DATA.achievements.filter(ac => ac.assoc === a.name);
+  const achievTbody       = document.getElementById('detail-achievements-tbody');
+
+  achievTbody.innerHTML = assocAchievements.length > 0
+    ? assocAchievements.map(ac => `
+        <tr>
+          <td style="color:var(--teal-light);font-weight:700">${ac.service}</td>
+          <td>${ac.desc}</td>
+          <td style="color:var(--text-3)">${ac.date}</td>
+        </tr>
+      `).join('')
+    : `<tr><td colspan="3"><div class="empty-state"><div class="icon">📭</div>لا توجد إنجازات مسجلة لهذه الجمعية بعد</div></td></tr>`;
+
+  document.getElementById('detail-overlay').classList.add('active');
+  document.getElementById('detail-overlay').scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDetail() {
+  document.getElementById('detail-overlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('detail-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeDetail();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+
+/* ═══════════════════════════════════════════
+   RENDER ALL
+═══════════════════════════════════════════ */
+function renderAll() {
+  renderKPIs();
+  renderAssocTable();
+  renderAchievements();
+  renderTargeted();
+  renderAlerts();
+
+  // آخر تحديث
+  const now = new Date();
+  document.getElementById('last-update').textContent =
+    'آخر تحديث: ' + now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+}
+
+/* ═══════════════════════════════════════════
+   MANUAL REFRESH
+═══════════════════════════════════════════ */
+async function manualRefresh() {
+  const btn = document.querySelector('.refresh-btn');
+  btn.classList.add('spinning');
+  await fetchData();
+  renderAll();
+  setTimeout(() => btn.classList.remove('spinning'), 600);
+}
+
+/* ═══════════════════════════════════════════
+   AUTO REFRESH
+═══════════════════════════════════════════ */
+async function autoRefresh() {
+  await fetchData();
+  renderAll();
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+(async function init() {
+  // Clock
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // Fetch data first time
+  await fetchData();
+
+  // Hide loading, show dashboard
+  const loadingScreen = document.getElementById('loading-screen');
+  loadingScreen.classList.add('hidden');
+  setTimeout(() => {
+    loadingScreen.style.display = 'none';
+    document.getElementById('main-dashboard').style.display = 'block';
+  }, 500);
+
+  renderAll();
+
+  // Auto-refresh every minute
+  setInterval(autoRefresh, REFRESH_INTERVAL);
+})();
+</script>
+
+</body>
+</html>
