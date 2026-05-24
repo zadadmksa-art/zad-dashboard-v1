@@ -638,8 +638,8 @@
     <div class="header-brand">
       <div class="header-logo">ز</div>
       <div class="header-title">
-        <h1>زاد التنموية — لوحة المتابعة</h1>
-        <p>Zad Development Services · لأثر مستدام</p>
+        <h1>زاد التنموية</h1>
+        <p>لوحة المتابعة</p>
       </div>
     </div>
     <div class="header-meta">
@@ -963,8 +963,7 @@ function renderKPIs() {
   const benefic   = assocs.reduce((s, a) => s + (a.beneficiaries || 0), 0);
   const programs  = assocs.reduce((s, a) => s + (a.programs      || 0), 0);
 
-  animateValue('kpi-count', 0, assocs.length, 800);
-  document.getElementById('kpi-total').textContent         = formatMoney(total);
+  document.getElementById('kpi-count').textContent = assocs.length.toLocaleString('en-US');  document.getElementById('kpi-total').textContent         = formatMoney(total);
   document.getElementById('kpi-paid').textContent          = paid > 0 ? paid.toLocaleString('en-US') : '0';
   document.getElementById('kpi-remaining').textContent     = formatMoney(remaining);
   document.getElementById('kpi-grants').textContent        = grants > 0 ? formatMoney(grants) : '—';
@@ -1068,7 +1067,7 @@ function buildAchieveItem(a) {
   return `
     <div class="achieve-item">
       <div class="achieve-meta">
-        <span class="achieve-tag">${a.assoc} &bull; ${a.service}</span>
+        <span class="achieve-tag"><span class="achieve-assoc">${a.assoc}</span> &bull; <span class="achieve-service">${a.service}</span></span>
         <span class="achieve-date">${label}${a.date}</span>
       </div>
       <div class="achieve-title">${a.desc}</div>
