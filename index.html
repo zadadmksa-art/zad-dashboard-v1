@@ -60,10 +60,10 @@
 
   * { font-weight: 700; }
 
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--teal-dark); }
+  ::-webkit-scrollbar { width: 7px; height: 7px; }
+  ::-webkit-scrollbar-track { background: rgba(56,178,172,0.08); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--teal-light); }
 
   /* ── LOADING SCREEN ── */
   #loading-screen {
@@ -181,7 +181,8 @@
   .header-title h1 { font-size: 17px; font-weight: 700; color: var(--text-1); line-height: 1.2; }
   .header-title p  { font-size: 12px; color: var(--teal); margin-top: 2px; }
 
-  .header-meta { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--text-3); }
+  .header-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; font-size: 13px; color: var(--text-3); }
+  .header-meta-top { display: flex; align-items: center; gap: 16px; }
 
   .live-badge {
     display: flex;
@@ -538,20 +539,22 @@
       </div>
     </div>
     <div class="header-meta">
-      <span id="clock"></span>
-      <!-- زر تبديل المظهر -->
+      <div class="header-meta-top">
+        <span id="clock"></span>
+        <button class="refresh-btn" onclick="manualRefresh()" title="تحديث البيانات">
+          <span class="refresh-icon">↻</span>
+          <span>تحديث</span>
+        </button>
+        <div class="live-badge">
+          <span class="live-dot"></span>
+          <span>مباشر</span>
+        </div>
+      </div>
+      <!-- زر تبديل المظهر تحت الصف الأول -->
       <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" title="تبديل المظهر">
         <span class="theme-icon" id="theme-icon">🌙</span>
         <span id="theme-label">فاتح</span>
       </button>
-      <button class="refresh-btn" onclick="manualRefresh()" title="تحديث البيانات">
-        <span class="refresh-icon">↻</span>
-        <span>تحديث</span>
-      </button>
-      <div class="live-badge">
-        <span class="live-dot"></span>
-        <span>مباشر</span>
-      </div>
     </div>
   </header>
 
