@@ -267,7 +267,7 @@
   }
 
   /* ── KPI CARDS ── */
-  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .kpis { display: grid; grid-template-columns: repeat(7, 1fr); gap: 14px; }
 
   .kpi-card {
     background: var(--card);
@@ -466,6 +466,10 @@
   }
   .show-all-btn:hover { background: rgba(56,178,172,0.22); }
 
+  /* ── تلوين اسم الجمعية في الإنجازات ── */
+  .achieve-assoc { color: var(--amber); font-weight: 800; }
+  .achieve-service { color: var(--blue); font-weight: 700; }
+
   /* ── DATE LABELS ── */
   .date-today {
     display: inline-block;
@@ -604,7 +608,7 @@
 
   /* ── RESPONSIVE ── */
   @media (max-width: 1100px) {
-    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .kpis { grid-template-columns: repeat(4, 1fr); }
     .grid-top-panels { grid-template-columns: 1fr; }
     .detail-kpis { grid-template-columns: repeat(2, 1fr); }
   }
@@ -689,6 +693,21 @@
         <div class="kpi-top"><span class="kpi-label">إجمالي المتبقي</span><div class="kpi-icon">⏳</div></div>
         <div class="kpi-value" id="kpi-remaining">—</div>
         <div class="kpi-sub">ريال سعودي</div>
+      </div>
+      <div class="kpi-card teal fade-up">
+        <div class="kpi-top"><span class="kpi-label">إجمالي المنح</span><div class="kpi-icon">🎁</div></div>
+        <div class="kpi-value" id="kpi-grants">—</div>
+        <div class="kpi-sub">ريال سعودي</div>
+      </div>
+      <div class="kpi-card green fade-up">
+        <div class="kpi-top"><span class="kpi-label">إجمالي المستفيدين</span><div class="kpi-icon">👥</div></div>
+        <div class="kpi-value" id="kpi-beneficiaries">—</div>
+        <div class="kpi-sub">مستفيد</div>
+      </div>
+      <div class="kpi-card amber fade-up">
+        <div class="kpi-top"><span class="kpi-label">إجمالي البرامج</span><div class="kpi-icon">📂</div></div>
+        <div class="kpi-value" id="kpi-programs">—</div>
+        <div class="kpi-sub">برنامج</div>
       </div>
     </section>
 
@@ -940,11 +959,17 @@ function renderKPIs() {
   const total     = assocs.reduce((s, a) => s + (a.contract || 0), 0);
   const paid      = assocs.reduce((s, a) => s + (a.paid    || 0), 0);
   const remaining = total - paid;
+  const grants    = assocs.reduce((s, a) => s + (a.grants        || 0), 0);
+  const benefic   = assocs.reduce((s, a) => s + (a.beneficiaries || 0), 0);
+  const programs  = assocs.reduce((s, a) => s + (a.programs      || 0), 0);
 
   animateValue('kpi-count', 0, assocs.length, 800);
-  document.getElementById('kpi-total').textContent     = formatMoney(total);
-  document.getElementById('kpi-paid').textContent      = paid > 0 ? paid.toLocaleString('en-US') : '0';
-  document.getElementById('kpi-remaining').textContent = formatMoney(remaining);
+  document.getElementById('kpi-total').textContent         = formatMoney(total);
+  document.getElementById('kpi-paid').textContent          = paid > 0 ? paid.toLocaleString('en-US') : '0';
+  document.getElementById('kpi-remaining').textContent     = formatMoney(remaining);
+  document.getElementById('kpi-grants').textContent        = grants > 0 ? formatMoney(grants) : '—';
+  document.getElementById('kpi-beneficiaries').textContent = benefic > 0 ? benefic.toLocaleString('en-US') : '—';
+  document.getElementById('kpi-programs').textContent      = programs > 0 ? programs.toLocaleString('en-US') : '—';
 }
 
 function animateValue(id, start, end, duration) {
