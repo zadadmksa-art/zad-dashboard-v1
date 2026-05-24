@@ -34,6 +34,18 @@
     --radius-lg:   16px;
   }
 
+  /* ── LIGHT THEME ── */
+  body.light-mode {
+    --bg:        #F0F4F8;
+    --card:      #FFFFFF;
+    --card-hover:#F7FAFC;
+    --border:    #E2E8F0;
+    --border-2:  #CBD5E0;
+    --text-1:    #1A202C;
+    --text-2:    #2D3748;
+    --text-3:    #718096;
+  }
+
   html { font-size: 16px; }
   body {
     font-family: 'Tajawal', sans-serif;
@@ -42,7 +54,11 @@
     direction: rtl;
     min-height: 100vh;
     line-height: 1.5;
+    transition: background 0.3s ease, color 0.3s ease;
+    font-weight: 700;
   }
+
+  * { font-weight: 700; }
 
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
@@ -142,6 +158,7 @@
     position: sticky;
     top: 0;
     z-index: 50;
+    transition: background 0.3s ease, border-color 0.3s ease;
   }
 
   .header-brand { display: flex; align-items: center; gap: 14px; }
@@ -210,6 +227,28 @@
   .refresh-btn:hover { border-color: var(--teal); color: var(--teal); }
   .refresh-btn.spinning .refresh-icon { animation: spin 0.8s linear infinite; }
 
+  /* ── THEME TOGGLE ── */
+  .theme-toggle {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-3);
+    font-family: 'Tajawal', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .theme-toggle:hover { border-color: var(--teal); color: var(--teal); }
+
+  .theme-icon { font-size: 14px; transition: transform 0.4s ease; }
+  .theme-toggle:hover .theme-icon { transform: rotate(20deg); }
+
   @keyframes spin { to { transform: rotate(360deg); } }
 
   #clock { font-variant-numeric: tabular-nums; font-weight: 500; letter-spacing: 0.5px; }
@@ -235,7 +274,7 @@
     position: relative;
     overflow: hidden;
     cursor: default;
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
   }
 
   .kpi-card::after {
@@ -268,7 +307,7 @@
   .kpi-card.red::after   { background: var(--red); }
 
   .kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .kpi-label { font-size: 12px; color: var(--text-3); font-weight: 500; }
+  .kpi-label { font-size: 12px; color: var(--text-3); font-weight: 900; }
 
   .kpi-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
 
@@ -285,7 +324,13 @@
   .kpi-sub { font-size: 11px; color: var(--text-3); }
 
   /* ── PANEL ── */
-  .panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: background 0.3s ease, border-color 0.3s ease;
+  }
 
   .panel-header {
     padding: 14px 20px;
@@ -322,12 +367,16 @@
     text-transform: uppercase;
   }
 
+  body.light-mode thead th { background: rgba(0,0,0,0.025); }
+
   tbody td { padding: 12px 16px; border-bottom: 1px solid rgba(33,38,45,0.55); color: var(--text-2); white-space: nowrap; }
+  body.light-mode tbody td { border-bottom: 1px solid rgba(203,213,224,0.6); }
   tbody tr:last-child td { border-bottom: none; }
   tbody tr { transition: background 0.15s ease; }
   tbody tr:hover td { background: rgba(56,178,172,0.045); cursor: pointer; }
 
   .cell-name { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--teal-light); }
+  body.light-mode .cell-name { color: var(--teal-dark); }
 
   .avatar { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
 
@@ -347,7 +396,6 @@
   .cell-amount.remaining { color: var(--amber); font-weight: 600; }
   .cell-amount.contract  { color: var(--text-1); }
 
-  /* ── VIVID GREEN BOLD for grants / beneficiaries / programs ── */
   .cell-vivid {
     color: var(--green-vivid) !important;
     font-weight: 800 !important;
@@ -359,25 +407,28 @@
 
   .progress-wrap { display: flex; align-items: center; gap: 8px; }
   .progress-bar { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; width: 80px; flex-shrink: 0; }
+  body.light-mode .progress-bar { background: rgba(0,0,0,0.08); }
   .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--teal), var(--green)); }
   .progress-label { font-size: 11px; color: var(--text-3); min-width: 30px; text-align: left; }
 
-  /* ── GRID LOWER ── */
-  .grid-lower { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; }
-  .right-col { display: flex; flex-direction: column; gap: 20px; }
+  /* ── NEWS/ACHIEVEMENTS ROW ── */
+  .grid-top-panels { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; }
 
   /* ── SCROLL LIST ── */
   .scroll-list { max-height: 300px; overflow-y: auto; }
 
   .achieve-item { padding: 13px 20px; border-bottom: 1px solid rgba(33,38,45,0.5); transition: background 0.14s; }
+  body.light-mode .achieve-item { border-bottom: 1px solid rgba(203,213,224,0.5); }
   .achieve-item:last-child { border-bottom: none; }
   .achieve-item:hover { background: rgba(56,178,172,0.04); }
   .achieve-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; gap: 8px; }
-  .achieve-tag { font-size: 11px; color: var(--teal); font-weight: 600; }
+  /* ── تكبير خط العنوان في الانجازات (الأزرق) ── */
+  .achieve-tag { font-size: 14px; color: var(--blue); font-weight: 700; }
   .achieve-date { font-size: 11px; color: var(--text-3); white-space: nowrap; flex-shrink: 0; }
   .achieve-title { font-size: 13px; font-weight: 600; color: var(--text-2); }
 
   .target-item { padding: 13px 20px; border-bottom: 1px solid rgba(33,38,45,0.5); display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: background 0.14s; }
+  body.light-mode .target-item { border-bottom: 1px solid rgba(203,213,224,0.5); }
   .target-item:last-child { border-bottom: none; }
   .target-item:hover { background: rgba(246,173,85,0.04); }
   .target-name { font-size: 13px; font-weight: 600; color: var(--text-2); }
@@ -388,6 +439,7 @@
   .status-badge.active  { background: rgba(104,211,145,0.10); color: var(--green); border: 1px solid rgba(104,211,145,0.24); }
 
   .alert-item { padding: 13px 20px; border-bottom: 1px solid rgba(33,38,45,0.5); display: flex; gap: 12px; align-items: flex-start; transition: background 0.14s; }
+  body.light-mode .alert-item { border-bottom: 1px solid rgba(203,213,224,0.5); }
   .alert-item:last-child { border-bottom: none; }
   .alert-item:hover { background: rgba(252,129,129,0.04); }
   .alert-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; background: rgba(252,129,129,0.10); border: 1px solid rgba(252,129,129,0.20); }
@@ -395,6 +447,9 @@
   .alert-title { font-size: 13px; font-weight: 700; color: var(--text-2); margin-bottom: 3px; }
   .alert-desc { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .alert-date { font-size: 11px; color: var(--red); margin-top: 5px; font-weight: 600; }
+
+  /* ── TARGETED (full width at bottom) ── */
+  .targeted-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; padding: 16px 20px; }
 
   /* ── DETAIL OVERLAY ── */
   .detail-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; overflow-y: auto; }
@@ -409,11 +464,12 @@
 
   .detail-header-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px 28px; margin-bottom: 22px; }
   .detail-name { font-size: 24px; font-weight: 900; color: var(--teal-light); display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  body.light-mode .detail-name { color: var(--teal-dark); }
   .detail-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
   .detail-kpi { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; }
+  body.light-mode .detail-kpi { background: rgba(0,0,0,0.02); }
   .detail-kpi-label { font-size: 11px; color: var(--text-3); margin-bottom: 7px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
   .detail-kpi-value { font-size: 20px; font-weight: 900; letter-spacing: -0.3px; }
-  /* vivid green in detail for grants/beneficiaries/programs */
   .detail-kpi-value.vivid-green { color: var(--green-vivid) !important; font-weight: 900; }
   .detail-section-title { font-size: 14px; font-weight: 700; color: var(--text-2); margin-bottom: 12px; display: flex; align-items: center; gap: 9px; }
 
@@ -448,7 +504,7 @@
   /* ── RESPONSIVE ── */
   @media (max-width: 1100px) {
     .kpis { grid-template-columns: repeat(2, 1fr); }
-    .grid-lower { grid-template-columns: 1fr; }
+    .grid-top-panels { grid-template-columns: 1fr; }
     .detail-kpis { grid-template-columns: repeat(2, 1fr); }
   }
 
@@ -483,6 +539,11 @@
     </div>
     <div class="header-meta">
       <span id="clock"></span>
+      <!-- زر تبديل المظهر -->
+      <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" title="تبديل المظهر">
+        <span class="theme-icon" id="theme-icon">🌙</span>
+        <span id="theme-label">فاتح</span>
+      </button>
       <button class="refresh-btn" onclick="manualRefresh()" title="تحديث البيانات">
         <span class="refresh-icon">↻</span>
         <span>تحديث</span>
@@ -501,7 +562,7 @@
 
   <main class="main">
 
-    <!-- KPI Cards -->
+    <!-- 1) KPI Cards -->
     <section class="kpis" id="kpi-section">
       <div class="kpi-card teal fade-up">
         <div class="kpi-top"><span class="kpi-label">الجمعيات المتعاقدة</span><div class="kpi-icon">🏢</div></div>
@@ -525,10 +586,31 @@
       </div>
     </section>
 
-    <!-- Associations Table -->
+    <!-- 2) الإنجازات والأخبار + التنبيهات والمواعيد -->
+    <div class="grid-top-panels">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><span class="panel-dot" style="background:var(--green)"></span>الإنجازات والأخبار</div>
+          <span class="panel-badge badge-green">الأحدث أولاً</span>
+        </div>
+        <div class="scroll-list" id="achievements-list">
+          <div class="empty-state"><div class="icon">⏳</div>جاري التحميل…</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><span class="panel-dot" style="background:var(--red)"></span>التنبيهات والمواعيد</div>
+          <span class="panel-badge badge-red" id="alerts-badge"></span>
+        </div>
+        <div id="alerts-list"><div class="empty-state"><div class="icon">⏳</div>جاري التحميل…</div></div>
+      </div>
+    </div>
+
+    <!-- 3) الجمعيات المتعاقدة (جدول) -->
     <section class="panel">
       <div class="panel-header">
-        <div class="panel-title"><span class="panel-dot" style="background:var(--teal)"></span>جدول الجمعيات المتعاقدة</div>
+        <div class="panel-title"><span class="panel-dot" style="background:var(--teal)"></span>الجمعيات المتعاقدة</div>
         <span class="panel-badge badge-teal" id="assoc-badge">—</span>
       </div>
       <div class="table-wrap">
@@ -554,36 +636,14 @@
       </div>
     </section>
 
-    <!-- Lower Grid -->
-    <div class="grid-lower">
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title"><span class="panel-dot" style="background:var(--green)"></span>الإنجازات العامة</div>
-          <span class="panel-badge badge-green">الأحدث أولاً</span>
-        </div>
-        <div class="scroll-list" id="achievements-list">
-          <div class="empty-state"><div class="icon">⏳</div>جاري التحميل…</div>
-        </div>
+    <!-- 4) الجمعيات المستهدفة (في الأسفل) -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><span class="panel-dot" style="background:var(--amber)"></span>الجمعيات المستهدفة</div>
+        <span class="panel-badge badge-amber" id="targeted-badge">—</span>
       </div>
-
-      <div class="right-col">
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title"><span class="panel-dot" style="background:var(--amber)"></span>الجمعيات المستهدفة</div>
-            <span class="panel-badge badge-amber" id="targeted-badge">—</span>
-          </div>
-          <div id="targeted-list"><div class="empty-state"><div class="icon">⏳</div>جاري التحميل…</div></div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title"><span class="panel-dot" style="background:var(--red)"></span>التنبيهات والمواعيد</div>
-            <span class="panel-badge badge-red" id="alerts-badge"></span>
-          </div>
-          <div id="alerts-list"><div class="empty-state"><div class="icon">⏳</div>جاري التحميل…</div></div>
-        </div>
-      </div>
-    </div>
+      <div id="targeted-list"><div class="empty-state"><div class="icon">⏳</div>جاري التحميل…</div></div>
+    </section>
 
   </main>
 
@@ -630,6 +690,30 @@
 ═══════════════════════════════════════════ */
 const API_URL = 'https://script.google.com/macros/s/AKfycbxHRXiqc67DcisAr3rJENQ5r2FJMTIm0ZuN8Ja01b4SY3KbHProquK1kNJJuoa6C_R2hw/exec';
 const REFRESH_INTERVAL = 60_000;
+
+/* ═══════════════════════════════════════════
+   THEME TOGGLE
+═══════════════════════════════════════════ */
+let isLight = false;
+
+function toggleTheme() {
+  isLight = !isLight;
+  document.body.classList.toggle('light-mode', isLight);
+  document.getElementById('theme-icon').textContent  = isLight ? '🌑' : '🌙';
+  document.getElementById('theme-label').textContent = isLight ? 'داكن' : 'فاتح';
+  localStorage.setItem('zadTheme', isLight ? 'light' : 'dark');
+}
+
+// restore saved preference
+(function() {
+  const saved = localStorage.getItem('zadTheme');
+  if (saved === 'light') {
+    isLight = true;
+    document.body.classList.add('light-mode');
+    document.getElementById('theme-icon') && (document.getElementById('theme-icon').textContent = '🌑');
+    document.getElementById('theme-label') && (document.getElementById('theme-label').textContent = 'داكن');
+  }
+})();
 
 /* ═══════════════════════════════════════════
    STATE
@@ -704,18 +788,13 @@ async function fetchData() {
 }
 
 /* ═══════════════════════════════════════════
-   HELPERS — English numbers (en-US)
+   HELPERS
 ═══════════════════════════════════════════ */
 function formatMoney(n) {
   if (!n) return '0';
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M';
   if (n >= 1_000)     return (n / 1_000).toFixed(0)     + 'K';
   return n.toLocaleString('en-US');
-}
-
-function formatNum(n) {
-  if (!n && n !== 0) return null;
-  return Number(n).toLocaleString('en-US');
 }
 
 function getInitial(name) {
@@ -726,12 +805,11 @@ function calcRemaining(a) { return (a.contract || 0) - (a.paid || 0); }
 function calcPercent(a)   { return a.contract > 0 ? Math.round(((a.paid || 0) / a.contract) * 100) : 0; }
 
 /* ═══════════════════════════════════════════
-   CLOCK
+   CLOCK — 12 ساعة
 ═══════════════════════════════════════════ */
 function updateClock() {
   const now  = new Date();
-  const opts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-  // Clock in English digits
+  const opts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
   document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', opts);
 }
 
@@ -786,17 +864,14 @@ function renderAssocTable() {
       ? `<span class="cell-amount paid">${a.paid.toLocaleString('en-US')}</span>`
       : '<span class="null-badge">لا يوجد</span>';
 
-    // Beneficiaries — vivid green bold
     const benefCell = (a.beneficiaries > 0)
       ? `<span class="cell-vivid">${Number(a.beneficiaries).toLocaleString('en-US')}</span>`
       : '<span class="null-badge">—</span>';
 
-    // Grants — vivid green bold
     const grantsCell = (a.grants > 0)
       ? `<span class="cell-vivid">${a.grants.toLocaleString('en-US')}</span>`
       : '<span class="null-badge">—</span>';
 
-    // Programs — vivid green bold
     const programsCell = (a.programs > 0)
       ? `<span class="cell-vivid">${Number(a.programs).toLocaleString('en-US')}</span>`
       : '<span class="null-badge">—</span>';
@@ -860,16 +935,17 @@ function renderTargeted() {
     return;
   }
 
-  el.innerHTML = list.map(t => {
+  // عرض في شبكة بدلاً من قائمة عمودية لأنها في الأسفل وعرضها أكبر
+  el.innerHTML = `<div class="targeted-grid">` + list.map(t => {
     const isActive   = t.status.includes('تم التوقيع');
     const badgeClass = isActive ? 'active' : 'pending';
     return `
-      <div class="target-item">
+      <div class="target-item" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;">
         <div class="target-name">${t.name}</div>
         <span class="status-badge ${badgeClass}"><span class="status-dot"></span>${t.status}</span>
       </div>
     `;
-  }).join('');
+  }).join('') + `</div>`;
 }
 
 /* ═══════════════════════════════════════════
@@ -914,7 +990,6 @@ function openDetail(idx) {
     ${a.name}
   `;
 
-  // vivid-green class applied to beneficiaries, grants, programs
   const kpiItems = [
     { label: 'قيمة العقد',         value: (a.contract || 0).toLocaleString('en-US') + ' SAR', color: 'var(--teal-light)', vivid: false },
     { label: 'المدفوع',            value: (a.paid    || 0).toLocaleString('en-US') + ' SAR',  color: 'var(--green)',      vivid: false },
@@ -973,7 +1048,7 @@ function renderAll() {
 
   const now = new Date();
   document.getElementById('last-update').textContent =
-    'آخر تحديث: ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    'آخر تحديث: ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
 /* ═══════════════════════════════════════════
@@ -999,6 +1074,13 @@ async function autoRefresh() {
    INIT
 ═══════════════════════════════════════════ */
 (async function init() {
+  // apply saved theme labels after DOM ready
+  const saved = localStorage.getItem('zadTheme');
+  if (saved === 'light') {
+    document.getElementById('theme-icon').textContent  = '🌑';
+    document.getElementById('theme-label').textContent = 'داكن';
+  }
+
   updateClock();
   setInterval(updateClock, 1000);
 
