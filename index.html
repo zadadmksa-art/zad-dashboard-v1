@@ -181,8 +181,10 @@
   .header-title h1 { font-size: 17px; font-weight: 700; color: var(--text-1); line-height: 1.2; }
   .header-title p  { font-size: 12px; color: var(--teal); margin-top: 2px; }
 
-  .header-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; font-size: 13px; color: var(--text-3); }
+  .header-meta { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--text-3); }
   .header-meta-top { display: flex; align-items: center; gap: 16px; }
+  .header-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .actions-row { display: flex; align-items: center; gap: 10px; }
 
   .live-badge {
     display: flex;
@@ -449,6 +451,104 @@
   .alert-desc { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .alert-date { font-size: 11px; color: var(--red); margin-top: 5px; font-weight: 600; }
 
+  /* ── SHOW ALL BTN ── */
+  .show-all-btn {
+    background: rgba(56,178,172,0.12);
+    border: 1px solid rgba(56,178,172,0.30);
+    color: var(--teal);
+    font-family: 'Tajawal', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .show-all-btn:hover { background: rgba(56,178,172,0.22); }
+
+  /* ── DATE LABELS ── */
+  .date-today {
+    display: inline-block;
+    margin-right: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: rgba(34,197,94,0.18);
+    color: var(--green-vivid);
+    border: 1px solid rgba(34,197,94,0.35);
+  }
+  .date-yesterday {
+    display: inline-block;
+    margin-right: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: rgba(99,179,237,0.18);
+    color: var(--blue);
+    border: 1px solid rgba(99,179,237,0.35);
+  }
+
+  /* ── ACHIEVEMENTS MODAL ── */
+  .achieve-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.72);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .achieve-modal-overlay.active { display: flex; animation: overlayFadeIn 0.22s ease; }
+
+  .achieve-modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 700px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideUp 0.25s ease;
+  }
+
+  .achieve-modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .modal-close-btn {
+    background: rgba(252,129,129,0.10);
+    border: 1px solid rgba(252,129,129,0.25);
+    color: var(--red);
+    font-size: 14px;
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    font-family: 'Tajawal', sans-serif;
+  }
+  .modal-close-btn:hover { background: rgba(252,129,129,0.22); }
+
+  .achieve-modal-body {
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* ── SCROLL LIST (modal only) ── */
+  .achieve-modal-body::-webkit-scrollbar { width: 7px; }
+  .achieve-modal-body::-webkit-scrollbar-track { background: rgba(56,178,172,0.08); border-radius: 4px; }
+  .achieve-modal-body::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 4px; }
+  .achieve-modal-body::-webkit-scrollbar-thumb:hover { background: var(--teal-light); }
+
   /* ── TARGETED (full width at bottom) ── */
   .targeted-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; padding: 16px 20px; }
 
@@ -541,20 +641,23 @@
     <div class="header-meta">
       <div class="header-meta-top">
         <span id="clock"></span>
-        <button class="refresh-btn" onclick="manualRefresh()" title="تحديث البيانات">
-          <span class="refresh-icon">↻</span>
-          <span>تحديث</span>
-        </button>
-        <div class="live-badge">
-          <span class="live-dot"></span>
-          <span>مباشر</span>
+        <div class="header-actions">
+          <div class="actions-row">
+            <button class="refresh-btn" onclick="manualRefresh()" title="تحديث البيانات">
+              <span class="refresh-icon">↻</span>
+              <span>تحديث</span>
+            </button>
+            <div class="live-badge">
+              <span class="live-dot"></span>
+              <span>مباشر</span>
+            </div>
+          </div>
+          <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" title="تبديل المظهر">
+            <span class="theme-icon" id="theme-icon">🌙</span>
+            <span id="theme-label">فاتح</span>
+          </button>
         </div>
       </div>
-      <!-- زر تبديل المظهر تحت الصف الأول -->
-      <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" title="تبديل المظهر">
-        <span class="theme-icon" id="theme-icon">🌙</span>
-        <span id="theme-label">فاتح</span>
-      </button>
     </div>
   </header>
 
@@ -594,9 +697,12 @@
       <div class="panel">
         <div class="panel-header">
           <div class="panel-title"><span class="panel-dot" style="background:var(--green)"></span>الإنجازات والأخبار</div>
-          <span class="panel-badge badge-green">الأحدث أولاً</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="panel-badge badge-green">الأحدث أولاً</span>
+            <button class="show-all-btn" onclick="openAchievementsModal()">عرض الكل</button>
+          </div>
         </div>
-        <div class="scroll-list" id="achievements-list">
+        <div id="achievements-list">
           <div class="empty-state"><div class="icon">⏳</div>جاري التحميل…</div>
         </div>
       </div>
@@ -656,6 +762,17 @@
   </footer>
 
 </div><!-- /#main-dashboard -->
+
+<!-- ACHIEVEMENTS MODAL -->
+<div class="achieve-modal-overlay" id="achieve-modal-overlay" onclick="closeAchievementsModal(event)">
+  <div class="achieve-modal">
+    <div class="achieve-modal-header">
+      <div class="panel-title"><span class="panel-dot" style="background:var(--green)"></span>جميع الإنجازات والأخبار</div>
+      <button class="modal-close-btn" onclick="closeAchievementsModal()">✕</button>
+    </div>
+    <div class="achieve-modal-body" id="achieve-modal-body"></div>
+  </div>
+</div>
 
 
 <!-- DETAIL OVERLAY -->
@@ -902,7 +1019,41 @@ function renderAssocTable() {
 }
 
 /* ═══════════════════════════════════════════
-   ACHIEVEMENTS
+   DATE LABEL HELPER
+═══════════════════════════════════════════ */
+function getDateLabel(dateStr) {
+  if (!dateStr) return '';
+  // parse date — try common formats
+  const parsed = new Date(dateStr);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+
+  if (!isNaN(parsed)) {
+    const d = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+    if (d.getTime() === today.getTime())
+      return `<span class="date-today">اليوم</span>`;
+    if (d.getTime() === yesterday.getTime())
+      return `<span class="date-yesterday">الأمس</span>`;
+  }
+  return '';
+}
+
+function buildAchieveItem(a) {
+  const label = getDateLabel(a.date);
+  return `
+    <div class="achieve-item">
+      <div class="achieve-meta">
+        <span class="achieve-tag">${a.assoc} &bull; ${a.service}</span>
+        <span class="achieve-date">${label}${a.date}</span>
+      </div>
+      <div class="achieve-title">${a.desc}</div>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════
+   ACHIEVEMENTS (main — 5 items, no scroll)
 ═══════════════════════════════════════════ */
 function renderAchievements() {
   const el   = document.getElementById('achievements-list');
@@ -913,16 +1064,35 @@ function renderAchievements() {
     return;
   }
 
-  el.innerHTML = list.map(a => `
-    <div class="achieve-item">
-      <div class="achieve-meta">
-        <span class="achieve-tag">${a.assoc} &bull; ${a.service}</span>
-        <span class="achieve-date">${a.date}</span>
-      </div>
-      <div class="achieve-title">${a.desc}</div>
-    </div>
-  `).join('');
+  const top5 = list.slice(0, 5);
+  el.innerHTML = top5.map(buildAchieveItem).join('');
 }
+
+/* ═══════════════════════════════════════════
+   ACHIEVEMENTS MODAL
+═══════════════════════════════════════════ */
+function openAchievementsModal() {
+  const body = document.getElementById('achieve-modal-body');
+  const list = DATA.achievements;
+  body.innerHTML = list.length
+    ? list.map(buildAchieveItem).join('')
+    : '<div class="empty-state"><div class="icon">📭</div>لا توجد إنجازات مسجلة</div>';
+  document.getElementById('achieve-modal-overlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAchievementsModal(e) {
+  if (e && e.target !== document.getElementById('achieve-modal-overlay')) return;
+  document.getElementById('achieve-modal-overlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeAchievementsModal();
+    closeDetail();
+  }
+});
 
 /* ═══════════════════════════════════════════
    TARGETED
@@ -965,16 +1135,18 @@ function renderAlerts() {
     return;
   }
 
-  el.innerHTML = list.map(a => `
+  el.innerHTML = list.map(a => {
+    const label = getDateLabel(a.date);
+    return `
     <div class="alert-item">
       <div class="alert-icon">⚡</div>
       <div class="alert-content">
         <div class="alert-title">${a.title}</div>
         <div class="alert-desc">${a.desc}</div>
-        <div class="alert-date">${a.date}</div>
+        <div class="alert-date">${label}${a.date}</div>
       </div>
     </div>
-  `).join('');
+  `}).join('');
 }
 
 /* ═══════════════════════════════════════════
@@ -1037,7 +1209,6 @@ function closeDetail() {
 document.getElementById('detail-overlay').addEventListener('click', function(e) {
   if (e.target === this) closeDetail();
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
 
 /* ═══════════════════════════════════════════
    RENDER ALL
